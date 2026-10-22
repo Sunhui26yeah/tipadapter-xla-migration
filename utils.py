@@ -40,8 +40,10 @@ def clip_classifier(classnames, template, clip_model):
             class_embedding = class_embeddings.mean(dim=0)
             class_embedding /= class_embedding.norm()
             clip_weights.append(class_embedding)
+            torch_xla.sync()
 
         clip_weights = torch.stack(clip_weights, dim=1).to(device)
+        torch_xla.sync()
     return clip_weights
 
 
