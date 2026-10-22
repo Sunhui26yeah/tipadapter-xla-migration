@@ -1,4 +1,6 @@
 import os
+# Pass every Python scalar (lr, beta, alpha, ...) as device data, so values that round to 0/1 do not recompile.
+os.environ.setdefault('XLA_NO_SPECIAL_SCALARS', '1')
 import random
 import argparse
 import time
