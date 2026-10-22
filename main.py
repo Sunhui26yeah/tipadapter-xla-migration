@@ -133,7 +133,7 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
             best_epoch = train_idx
             torch.save(adapter.weight.detach().cpu(), cfg['cache_dir'] + "/best_F_" + str(cfg['shots']) + "shots.pt")
     
-    adapter.weight = nn.Parameter(torch.load(cfg['cache_dir'] + "/best_F_" + str(cfg['shots']) + "shots.pt", map_location=device))
+    adapter.weight = nn.Parameter(torch.load(cfg['cache_dir'] + "/best_F_" + str(cfg['shots']) + "shots.pt", map_location='cpu').to(device))
     print(f"**** After fine-tuning, Tip-Adapter-F's best test accuracy: {best_acc:.2f}, at epoch: {best_epoch}. ****\n")
 
     print("\n-------- Searching hyperparameters on the val set. --------")
