@@ -1,6 +1,7 @@
 import os
 import random
 import argparse
+import time
 import yaml
 from tqdm import tqdm
 
@@ -75,6 +76,8 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
     beta, alpha = cfg['init_beta'], cfg['init_alpha']
     best_acc, best_epoch = 0.0, 0
 
+    xla_report('before Tip-Adapter-F training')
+    global_step, t_prev = 0, time.time()
     for train_idx in range(cfg['train_epoch']):
         # Train
         adapter.train()
@@ -105,6 +108,10 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
             optimizer.step()
             scheduler.step()
             torch_xla.sync()
+            global_step += 1
+            t_now = time.time()
+            print('[step] {} loss {:.6f} batch {} time_s {:.4f} device {}/{}'.format(global_step, loss_list[-1], len(target), t_now - t_prev, images.device, adapter.weight.device))
+            t_prev = t_now
 
         current_lr = scheduler.get_last_lr()[0]
         print('LR: {:.6f}, Acc: {:.4f} ({:}/{:}), Loss: {:.4f}'.format(current_lr, correct_samples / all_samples, correct_samples, all_samples, sum(loss_list)/len(loss_list)))
@@ -119,6 +126,8 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
         acc = cls_acc(tip_logits, test_labels)
 
         print("**** Tip-Adapter-F's test accuracy: {:.2f}. ****\n".format(acc))
+        print('[eval] epoch {} test_examples {}'.format(train_idx, test_labels.shape[0]))
+        xla_report('after epoch {}'.format(train_idx))
         if acc > best_acc:
             best_acc = acc
             best_epoch = train_idx
@@ -131,6 +140,7 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
 
     # Search Hyperparameters
     best_beta, best_alpha = search_hp(cfg, cache_keys, cache_values, val_features, val_labels, clip_weights, adapter=adapter)
+    xla_report('after Tip-Adapter-F search')
 
     print("\n-------- Evaluating on the test set. --------")
    

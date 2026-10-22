@@ -18,6 +18,13 @@ def cls_acc(output, target, topk=1):
     return acc
 
 
+def xla_report(tag):
+    import torch_xla.debug.metrics as met
+    ct = met.metric_data('CompileTime')
+    fallbacks = {k: met.counter_value(k) for k in met.counter_names() if k.startswith('aten::')}
+    print("[XLA] {}: CompileTime count={}, aten fallbacks={}".format(tag, ct[0] if ct else 0, fallbacks))
+
+
 def clip_classifier(classnames, template, clip_model):
     with torch.no_grad():
         clip_weights = []
