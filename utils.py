@@ -40,8 +40,10 @@ def clip_classifier(classnames, template, clip_model):
             class_embedding = class_embeddings.mean(dim=0)
             class_embedding /= class_embedding.norm()
             clip_weights.append(class_embedding)
+            torch_xla.sync()
 
         clip_weights = torch.stack(clip_weights, dim=1).to(device)
+        torch_xla.sync()
     return clip_weights
 
 
@@ -64,12 +66,14 @@ def build_cache_model(cfg, clip_model, train_loader_cache):
                     if augment_idx == 0:
                         target = target.to(device)
                         cache_values.append(target)
+                    torch_xla.sync()
                 cache_keys.append(torch.cat(train_features, dim=0).unsqueeze(0))
             
         cache_keys = torch.cat(cache_keys, dim=0).mean(dim=0)
         cache_keys /= cache_keys.norm(dim=-1, keepdim=True)
         cache_keys = cache_keys.permute(1, 0)
         cache_values = F.one_hot(torch.cat(cache_values, dim=0)).half()
+        torch_xla.sync()
 
         torch.save(cache_keys, cfg['cache_dir'] + '/keys_' + str(cfg['shots']) + "shots.pt")
         torch.save(cache_values, cfg['cache_dir'] + '/values_' + str(cfg['shots']) + "shots.pt")
@@ -93,8 +97,10 @@ def pre_load_features(cfg, split, clip_model, loader):
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 features.append(image_features)
                 labels.append(target)
+                torch_xla.sync()
 
         features, labels = torch.cat(features), torch.cat(labels)
+        torch_xla.sync()
 
         torch.save(features, cfg['cache_dir'] + "/" + split + "_f.pt")
         torch.save(labels, cfg['cache_dir'] + "/" + split + "_l.pt")
