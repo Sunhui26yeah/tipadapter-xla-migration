@@ -104,6 +104,7 @@ def run_tip_adapter_F(cfg, cache_keys, cache_values, val_features, val_labels, t
             loss.backward()
             optimizer.step()
             scheduler.step()
+            torch_xla.sync()
 
         current_lr = scheduler.get_last_lr()[0]
         print('LR: {:.6f}, Acc: {:.4f} ({:}/{:}), Loss: {:.4f}'.format(current_lr, correct_samples / all_samples, correct_samples, all_samples, sum(loss_list)/len(loss_list)))
